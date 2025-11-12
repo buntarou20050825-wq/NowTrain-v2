@@ -13,7 +13,7 @@ from pathlib import Path
 
 # Import our modules
 from config import (
-    ODPT_API_KEY, INITIAL_RAILWAYS, GTFS_DATA_PATH,
+    ODPT_API_KEY, ODPT_BASE_URL, INITIAL_RAILWAYS, GTFS_DATA_PATH,
     SHAPEFILE_STATION_PATH, SHAPEFILE_RAIL_PATH,
     OVERRIDES_STATION_PATH, POLL_INTERVAL_SEC
 )
@@ -84,7 +84,8 @@ async def startup():
 
     # Initialize ODPT client
     print("\n[Startup] Initializing ODPT client...")
-    odpt_client = ODPTClient(api_key=ODPT_API_KEY, railways=INITIAL_RAILWAYS)
+    print(f"[Startup] Using ODPT base URL: {ODPT_BASE_URL}")
+    odpt_client = ODPTClient(api_key=ODPT_API_KEY, railways=INITIAL_RAILWAYS, base_url=ODPT_BASE_URL)
 
     # Fetch ODPT stations
     print("[Startup] Fetching ODPT stations...")

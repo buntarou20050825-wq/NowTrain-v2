@@ -5,6 +5,7 @@ import os
 
 # ODPT API
 ODPT_API_KEY = os.getenv("ODPT_API_KEY", "")
+ODPT_BASE_URL = os.getenv("ODPT_BASE", "https://api-tokyochallenge.odpt.org/api/v4")
 
 # Polling settings
 POLL_INTERVAL_SEC = 3

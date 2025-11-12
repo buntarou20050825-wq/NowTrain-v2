@@ -8,9 +8,9 @@ from typing import List, Dict
 
 
 class ODPTClient:
-    def __init__(self, api_key: str, railways: List[str]):
+    def __init__(self, api_key: str, railways: List[str], base_url: str = "https://api-tokyochallenge.odpt.org/api/v4"):
         self.api_key = api_key
-        self.base_url = "https://api.odpt.org/api/v4"
+        self.base_url = base_url
         self.railways = railways
         self.consecutive_failures = 0
         self.backoff_sec = 3
