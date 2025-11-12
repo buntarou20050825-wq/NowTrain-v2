@@ -1,0 +1,6 @@
+{
+  "_comment": "Manual overrides for ODPT station ID to GTFS stop ID mapping",
+  "_example": {
+    "odpt.Station:JR-East.Chuo.Shinjuku": "1001"
+  }
+}
