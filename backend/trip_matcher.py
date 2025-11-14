@@ -72,8 +72,8 @@ class TripMatcher:
             return trip_id.split('.')[-1]
 
         # GTFS format: "1110870T", "4210820G"
-        # Extract trailing pattern: one or more digits + one or more uppercase letters
-        match = re.search(r'(\d+[A-Z]+)$', trip_id)
+        # Extract trailing 3-4 digit train number (non-zero leading) + uppercase letters
+        match = re.search(r'([1-9]\d{2,3}[A-Z]+)$', trip_id)
         if match:
             return match.group(1)
 
