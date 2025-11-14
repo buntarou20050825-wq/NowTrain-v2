@@ -22,7 +22,7 @@ class ShapefileLoader:
 
         print("[Shapefile] Loading station data...")
         try:
-            sf = shapefile.Reader(str(self.station_shp))
+            sf = shapefile.Reader(str(self.station_shp), encoding='shift-jis')
 
             for record in sf.iterShapeRecords():
                 try:
@@ -72,7 +72,7 @@ class ShapefileLoader:
 
         print("[Shapefile] Loading rail section data...")
         try:
-            sf = shapefile.Reader(str(self.rail_shp))
+            sf = shapefile.Reader(str(self.rail_shp), encoding='shift-jis')
 
             for record in sf.iterShapeRecords():
                 try:

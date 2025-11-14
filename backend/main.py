@@ -1,5 +1,5 @@
 """
-JR East Real-time Train Tracking System - Main Application
+JR East Real-time Train Tracking System - Main Application (Debug Version)
 FastAPI server with SSE streaming
 """
 from fastapi import FastAPI
@@ -57,7 +57,7 @@ async def startup():
     global gtfs_loader, shapefile_loader, station_mapper, trip_matcher, interpolator, odpt_client, rail_paths
 
     print("\n" + "="*60)
-    print("JR East Real-time Train Tracking System")
+    print("JR East Real-time Train Tracking System (DEBUG MODE)")
     print("="*60 + "\n")
 
     # Check API key
@@ -140,9 +140,24 @@ async def poll_loop():
             vehicles = []
             match_success = 0
             match_failed = {}
+            skip_no_stops = 0
+
+            # DEBUG: Print sample train data on first loop
+            if live_snapshot["seq"] == 0 and trains:
+                print(f"\n{'='*60}")
+                print("[DEBUG] Sample train data (first train):")
+                print(f"{json.dumps(trains[0], indent=2)}")
+                print(f"{'='*60}\n")
 
             for train in trains:
                 if not train.get("from_stop") or not train.get("to_stop"):
+                    skip_no_stops += 1
+                    # DEBUG: Show skipped trains (first 3 only)
+                    if live_snapshot["seq"] == 0 and skip_no_stops <= 3:
+                        print(f"[DEBUG] SKIPPED (no stops):")
+                        print(f"  trip_id: {train.get('trip_id')}")
+                        print(f"  from_stop: {train.get('from_stop')}")
+                        print(f"  to_stop: {train.get('to_stop')}\n")
                     continue
 
                 position = interpolator.calculate_position(
@@ -181,6 +196,12 @@ async def poll_loop():
                 else:
                     reason = "no-position"
                     match_failed[reason] = match_failed.get(reason, 0) + 1
+                    # DEBUG: Show failed matches (first 3 only)
+                    if live_snapshot["seq"] == 0 and match_failed.get(reason, 0) <= 3:
+                        print(f"[DEBUG] POSITION FAILED:")
+                        print(f"  trip_id: {train['trip_id']}")
+                        print(f"  from_stop: {train['from_stop']}")
+                        print(f"  to_stop: {train['to_stop']}\n")
 
             # Update snapshot
             live_snapshot = {
@@ -197,7 +218,8 @@ async def poll_loop():
 
             print(f"[poll_loop] Seq {live_snapshot['seq']} | "
                   f"Fetched {len(trains)} trains | "
-                  f"Matched: {match_success}/{len(trains)} | "
+                  f"Skipped: {skip_no_stops} | "
+                  f"Matched: {match_success}/{len(trains) - skip_no_stops} | "
                   f"Failed: {dict(match_failed) if match_failed else 'None'}")
 
         except Exception as e:
@@ -267,7 +289,7 @@ async def debug_snapshot():
 async def root():
     """Root endpoint"""
     return {
-        "name": "JR East Real-time Train Tracker",
+        "name": "JR East Real-time Train Tracker (DEBUG)",
         "version": "1.0.0",
         "endpoints": {
             "stream": "/api/trains/stream",

@@ -49,6 +49,11 @@ class TripMatcher:
             index[train_number].append(trip_id)
 
         print(f"[TripMatcher] Indexed {len(index)} unique train numbers")
+        
+        # DEBUG: Show sample index entries
+        sample_keys = list(index.keys())[:10]
+        print(f"[TripMatcher] Sample train numbers: {sample_keys}")
+        
         return index
 
     def _extract_train_number(self, trip_id: str) -> str:
@@ -56,19 +61,21 @@ class TripMatcher:
         Extract train number from trip_id
 
         Examples:
-            "JR-East.Chuo.554M" -> "554M"
-            "1610554M" -> "554M"
-            "4110554M" -> "554M"
+            ODPT: "odpt.Train:JR-East.ChuoRapid.870T" -> "870T"
+            GTFS: "1110870T" -> "870T"
+            GTFS: "4210820G" -> "820G"
+        
+        Strategy: Extract trailing digits + uppercase letters
         """
         if '.' in trip_id:
-            # ODPT format: "JR-East.Chuo.554M"
+            # ODPT format: "odpt.Train:JR-East.ChuoRapid.870T"
             return trip_id.split('.')[-1]
 
-        # GTFS format: "1610554M", "4110554M"
-        # Extract trailing alphanumeric pattern
-        match = re.search(r'[0-9]+[A-Z]$', trip_id)
+        # GTFS format: "1110870T", "4210820G"
+        # Extract trailing pattern: one or more digits + one or more uppercase letters
+        match = re.search(r'(\d+[A-Z]+)$', trip_id)
         if match:
-            return match.group()
+            return match.group(1)
 
         return trip_id
 

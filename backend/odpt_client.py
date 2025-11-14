@@ -38,6 +38,9 @@ class ODPTClient:
                 self.backoff_sec = 3
             except Exception as e:
                 print(f"[ODPT] Failed to fetch {railway}: {e}")
+                print(f"[ODPT] Error details:")
+                import traceback
+                traceback.print_exc()
                 self.consecutive_failures += 1
 
                 # Exponential backoff (max 30 seconds)
@@ -54,14 +57,22 @@ class ODPTClient:
             "odpt:railway": railway_id
         }
 
+        print(f"[ODPT] Fetching {railway_id}")
+        print(f"[ODPT]   URL: {url}")
+        print(f"[ODPT]   Params: {params}")
+
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(url, params=params)
 
+            print(f"[ODPT]   Status: {response.status_code}")
+            
             if response.status_code == 429:
                 raise Exception("Rate limited (429)")
 
             response.raise_for_status()
             data = response.json()
+
+            print(f"[ODPT]   Received {len(data)} trains")
 
             # Normalize data
             trains = []
@@ -90,19 +101,52 @@ class ODPTClient:
             "odpt:railway": railway_id
         }
 
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(url, params=params)
-            response.raise_for_status()
-            data = response.json()
+        print(f"[ODPT] Fetching stations for {railway_id}")
+        print(f"[ODPT]   URL: {url}")
+        print(f"[ODPT]   Params: {params}")
 
-            stations = {}
-            for station in data:
-                station_id = station.get("owl:sameAs")
-                if station_id and station.get("geo:lat") and station.get("geo:long"):
-                    stations[station_id] = {
-                        "lat": float(station["geo:lat"]),
-                        "lon": float(station["geo:long"]),
-                        "name": station.get("dc:title", "")
-                    }
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(url, params=params)
+                
+                print(f"[ODPT]   Status: {response.status_code}")
+                print(f"[ODPT]   Response headers: {dict(response.headers)}")
+                
+                # 詳細なレスポンス内容を表示
+                if response.status_code != 200:
+                    print(f"[ODPT]   Response text: {response.text[:500]}")  # 最初の500文字
+                
+                response.raise_for_status()
+                data = response.json()
 
-            return stations
+                print(f"[ODPT]   Received {len(data)} stations")
+
+                stations = {}
+                for station in data:
+                    station_id = station.get("owl:sameAs")
+                    if station_id and station.get("geo:lat") and station.get("geo:long"):
+                        stations[station_id] = {
+                            "lat": float(station["geo:lat"]),
+                            "lon": float(station["geo:long"]),
+                            "name": station.get("dc:title", "")
+                        }
+
+                return stations
+                
+        except httpx.HTTPStatusError as e:
+            print(f"[ODPT] HTTP Error fetching stations for {railway_id}:")
+            print(f"  Status: {e.response.status_code}")
+            print(f"  Response: {e.response.text[:500]}")
+            return {}
+        except httpx.RequestError as e:
+            print(f"[ODPT] Network Error fetching stations for {railway_id}:")
+            print(f"  Error type: {type(e).__name__}")
+            print(f"  Error: {e}")
+            return {}
+        except Exception as e:
+            print(f"[ODPT] Unexpected Error fetching stations for {railway_id}:")
+            print(f"  Error type: {type(e).__name__}")
+            print(f"  Error: {e}")
+            import traceback
+            traceback.print_exc()
+            return {}
