@@ -12,9 +12,27 @@ JST = pytz.timezone('Asia/Tokyo')
 
 
 def time_to_seconds(time_str: str) -> int:
-    """Convert HH:MM:SS to seconds (supports 24+ hours)"""
-    h, m, s = map(int, time_str.split(':'))
-    return h * 3600 + m * 60 + s
+    """
+    Convert HH:MM:SS to seconds (supports 24+ hours)
+    Returns -1 if invalid
+    """
+    if not time_str or not time_str.strip():
+        return -1
+    
+    try:
+        parts = time_str.split(':')
+        if len(parts) != 3:
+            return -1
+        
+        h, m, s = map(int, parts)
+        
+        # Validate ranges
+        if h < 0 or m < 0 or m >= 60 or s < 0 or s >= 60:
+            return -1
+            
+        return h * 3600 + m * 60 + s
+    except (ValueError, AttributeError):
+        return -1
 
 
 def get_current_time_sec() -> int:
@@ -72,8 +90,8 @@ class TripMatcher:
             return trip_id.split('.')[-1]
 
         # GTFS format: "1110870T", "4210820G"
-        # Extract trailing 3-4 digit train number (non-zero leading) + uppercase letters
-        match = re.search(r'([1-9]\d{2,3}[A-Z]+)$', trip_id)
+        # Extract trailing pattern: digits + uppercase letters
+        match = re.search(r'(\d+[A-Z]+)$', trip_id)
         if match:
             return match.group(1)
 
@@ -136,6 +154,8 @@ class TripMatcher:
 
             # First departure time
             first_dep = time_to_seconds(stop_times[0]["departure_time"])
+            if first_dep < 0:  # Invalid time
+                continue
 
             # Time proximity score (closer is better)
             time_diff = abs(current_time_sec - first_dep)
@@ -165,6 +185,10 @@ class TripMatcher:
                     # Check if within segment
                     dep_time = time_to_seconds(stop_times[idx_from]["departure_time"])
                     arr_time = time_to_seconds(stop_times[idx_to]["arrival_time"])
+                    
+                    # Skip if invalid times
+                    if dep_time < 0 or arr_time < 0:
+                        continue
 
                     # Too short segment -> penalty (exclude stop-only trips)
                     duration = arr_time - dep_time
