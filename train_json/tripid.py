@@ -1,10 +1,21 @@
-import pandas as pd
+from google.transit import gtfs_realtime_pb2
+import gzip
 
-# GTFSのtrips.txtを読み込み
-df = pd.read_csv('C:/Users/bunta/NowTrain-v2/train_json/trips.json')
+feed = gtfs_realtime_pb2.FeedMessage()
+with open(r"C:\Users\bunta\NowTrain-v2\train_json\jreast_odpt_train_vehicle (5)", "rb") as f:
+    data = f.read()
 
-# trip_idのサンプルを表示
-print(df['trip_id'].head(20))
 
-# 列車番号が含まれているか検索
-print(df[df['trip_id'].str.contains('870T|844T', na=False)])
+# gzip 圧縮されてる場合はここで解凍
+# data = gzip.decompress(data)
+
+feed.ParseFromString(data)
+
+for entity in feed.entity[:5]:
+    if entity.HasField("vehicle"):
+        v = entity.vehicle
+        print("entity_id:", entity.id)
+        print("trip_id:", v.trip.trip_id)
+        print("route_id:", v.trip.route_id)
+        print("timestamp:", v.timestamp)
+        print("---")
